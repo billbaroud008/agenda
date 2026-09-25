@@ -31,13 +31,25 @@ const gptImage = ({ label, t2i, i2i, cost }) => ({
 });
 
 export const IMAGE_MODELS = {
-  'gpt-image-2-5': gptImage({
-    label: 'GPT Image 2.5 (à vérifier)',
-    // ⚠ Absent de la doc et du comparateur : identifiants supposés, calqués sur GPT Image 2.
-    t2i: 'gpt-image-2-5-text-to-image',
-    i2i: 'gpt-image-2-5-image-to-image',
+  // GPT Image 2.5 : deux versions, Flare (rapide, courante) et Sunburst (détails fins).
+  // ⚠ Identifiants KIE supposés, calqués sur GPT Image 2 ; tarif non publié dans le comparateur.
+  'gpt-image-2-5': {
+    label: 'GPT Image 2.5',
+    maxRefs: 6,
+    ratios: ['auto', '1:1', '3:2', '2:3', '16:9', '9:16', '4:3', '3:4', '21:9', '27:16', '16:27', '9:8', '8:9'],
+    defaultRatio: 'auto',
+    options: { version: ['Flare', 'Sunburst'], resolution: ['1K', '2K', '4K'] },
+    build: ({ prompt, ratio, refs, opts }) => {
+      const v = opts.version.toLowerCase();
+      // 27:16, 16:27, 9:8 et 8:9 n'existent qu'en 1K.
+      const resolution = ['27:16', '16:27', '9:8', '8:9'].includes(ratio) ? '1K' : opts.resolution;
+      const input = { prompt, aspect_ratio: ratio, resolution };
+      return refs.length
+        ? { model: `gpt-image-2-5-${v}-image-to-image`, input: { ...input, input_urls: refs } }
+        : { model: `gpt-image-2-5-${v}-text-to-image`, input };
+    },
     cost: () => null,
-  }),
+  },
   'gpt-image-2': gptImage({
     label: 'GPT Image 2',
     t2i: 'gpt-image-2-text-to-image',
