@@ -54,7 +54,7 @@ const table = (t) => (o) => t[o.resolution]?.[o.duration] ?? null;
 
 // Seedance 2.x : premier/dernier frame OU multi-référence (modes exclusifs chez KIE).
 const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => String(a + i));
-const seedance2 = ({ name, kieModel, maxDuration, maxRefs, resolutions, defaultRatio }) => (mode) => ({
+const seedance2 = ({ name, kieModel, maxDuration, maxRefs, resolutions, defaultRatio, perSecond }) => (mode) => ({
   label: `${name} · ${mode === 'frames' ? 'premier/dernier frame' : 'multi-référence'}`,
   maxImages: mode === 'frames' ? 2 : maxRefs,
   imageRoles: mode === 'frames' ? ['Premier frame', 'Dernier frame'] : range(1, maxRefs).map((n) => `Réf. ${n}`),
@@ -76,16 +76,19 @@ const seedance2 = ({ name, kieModel, maxDuration, maxRefs, resolutions, defaultR
     }
     return { model: kieModel, input };
   },
-  cost: () => null, // tarif à vérifier sur kie.ai/pricing
+  // Crédits par seconde (sans vidéo en entrée), tarifs KIE du 18/08/2026.
+  cost: (o) => Math.round(perSecond[o.resolution] * Number(o.duration) * 10) / 10,
 });
 
 const s25 = seedance2({
   name: 'Seedance 2.5', kieModel: 'bytedance/seedance-2-5', maxDuration: 30, maxRefs: 30,
   resolutions: ['720p', '480p', '1080p'], defaultRatio: 'adaptive',
+  perSecond: { '480p': 28, '720p': 63, '1080p': 114 },
 });
 const s2 = seedance2({
   name: 'Seedance 2 Mini', kieModel: 'bytedance/seedance-2-mini', maxDuration: 15, maxRefs: 9,
   resolutions: ['720p', '480p'], defaultRatio: '16:9',
+  perSecond: { '480p': 3.8, '720p': 8.2 },
 });
 
 export const VIDEO_MODELS = {
