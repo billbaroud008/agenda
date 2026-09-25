@@ -1,0 +1,129 @@
+// Registre des modèles KIE. Les noms et paramètres suivent la doc KIE (Market API).
+// ⚠ Ils varient d'un modèle à l'autre : vérifier https://docs.kie.ai avant d'ajouter un modèle.
+// Les coûts sont des estimations en crédits (1 crédit ≈ 0,005 $) : vérifier https://kie.ai/pricing.
+
+export const CREDIT_USD = 0.005;
+
+const RATIOS = ['1:1', '3:4', '4:3', '9:16', '16:9', '2:3', '3:2', '21:9'];
+
+const SEEDREAM_SIZE = {
+  '1:1': 'square_hd', '3:4': 'portrait_4_3', '4:3': 'landscape_4_3', '9:16': 'portrait_16_9',
+  '16:9': 'landscape_16_9', '2:3': 'portrait_3_2', '3:2': 'landscape_3_2', '21:9': 'landscape_21_9',
+};
+
+export const IMAGE_MODELS = {
+  'nano-banana': {
+    label: 'Nano Banana',
+    maxRefs: 10,
+    ratios: RATIOS,
+    options: {},
+    build: ({ prompt, ratio, refs }) =>
+      refs.length
+        ? { model: 'google/nano-banana-edit', input: { prompt, image_urls: refs, output_format: 'png', image_size: ratio } }
+        : { model: 'google/nano-banana', input: { prompt, output_format: 'png', image_size: ratio } },
+    cost: () => 4,
+  },
+  'nano-banana-pro': {
+    label: 'Nano Banana Pro',
+    maxRefs: 8,
+    ratios: RATIOS,
+    options: { resolution: ['1K', '2K', '4K'] },
+    build: ({ prompt, ratio, refs, opts }) => ({
+      model: 'nano-banana-pro',
+      input: { prompt, image_input: refs, aspect_ratio: ratio, resolution: opts.resolution, output_format: 'png' },
+    }),
+    cost: (o) => (o.resolution === '4K' ? 24 : 18),
+  },
+  'seedream-4': {
+    label: 'Seedream 4.0',
+    maxRefs: 10,
+    ratios: RATIOS,
+    options: { resolution: ['1K', '2K', '4K'] },
+    build: ({ prompt, ratio, refs, opts }) => {
+      const input = { prompt, image_size: SEEDREAM_SIZE[ratio], image_resolution: opts.resolution, max_images: 1 };
+      return refs.length
+        ? { model: 'bytedance/seedream-v4-edit', input: { ...input, image_urls: refs } }
+        : { model: 'bytedance/seedream-v4-text-to-image', input };
+    },
+    cost: () => 3.5,
+  },
+};
+
+// Vidéo : images reliées = premier frame, puis dernier frame si le modèle le permet.
+const table = (t) => (o) => t[o.resolution]?.[o.duration] ?? null;
+
+export const VIDEO_MODELS = {
+  'seedance-lite': {
+    label: 'Seedance 1.0 Lite',
+    maxImages: 2,
+    imageRoles: ['Premier frame', 'Dernier frame'],
+    options: { duration: ['5', '10'], resolution: ['480p', '720p', '1080p'] },
+    ratios: ['16:9', '9:16', '1:1', '4:3', '3:4', '21:9'],
+    build: ({ prompt, images, ratio, opts }) => {
+      const base = { prompt, resolution: opts.resolution, duration: opts.duration, camera_fixed: false };
+      if (!images.length) return { model: 'bytedance/v1-lite-text-to-video', input: { ...base, aspect_ratio: ratio } };
+      const input = { ...base, image_url: images[0] };
+      if (images[1]) input.end_image_url = images[1];
+      return { model: 'bytedance/v1-lite-image-to-video', input };
+    },
+    cost: table({ '480p': { 5: 10, 10: 20 }, '720p': { 5: 22.5, 10: 45 }, '1080p': { 5: 50, 10: 100 } }),
+  },
+  'seedance-pro': {
+    label: 'Seedance 1.0 Pro',
+    maxImages: 1,
+    imageRoles: ['Premier frame'],
+    options: { duration: ['5', '10'], resolution: ['480p', '720p', '1080p'] },
+    ratios: ['16:9', '9:16', '1:1', '4:3', '3:4', '21:9'],
+    build: ({ prompt, images, ratio, opts }) => {
+      const base = { prompt, resolution: opts.resolution, duration: opts.duration, camera_fixed: false };
+      return images.length
+        ? { model: 'bytedance/v1-pro-image-to-video', input: { ...base, image_url: images[0] } }
+        : { model: 'bytedance/v1-pro-text-to-video', input: { ...base, aspect_ratio: ratio } };
+    },
+    cost: table({ '480p': { 5: 14, 10: 28 }, '720p': { 5: 30, 10: 60 }, '1080p': { 5: 70, 10: 140 } }),
+  },
+  'hailuo-standard': {
+    label: 'Minimax Hailuo 02 Standard',
+    maxImages: 2,
+    imageRoles: ['Premier frame', 'Dernier frame'],
+    options: { duration: ['6', '10'], resolution: ['512P', '768P'] },
+    ratios: null,
+    build: ({ prompt, images, opts }) => {
+      const base = { prompt, duration: opts.duration, prompt_optimizer: true };
+      if (!images.length) return { model: 'hailuo/02-text-to-video-standard', input: base };
+      const input = { ...base, image_url: images[0], resolution: opts.resolution };
+      if (images[1]) input.end_image_url = images[1];
+      return { model: 'hailuo/02-image-to-video-standard', input };
+    },
+    cost: table({ '512P': { 6: 12, 10: 20 }, '768P': { 6: 30, 10: 50 } }),
+  },
+  'hailuo-pro': {
+    label: 'Minimax Hailuo 02 Pro (1080P)',
+    maxImages: 2,
+    imageRoles: ['Premier frame', 'Dernier frame'],
+    options: { duration: ['6'], resolution: ['1080P'] },
+    ratios: null,
+    build: ({ prompt, images }) => {
+      const base = { prompt, prompt_optimizer: true };
+      if (!images.length) return { model: 'hailuo/02-text-to-video-pro', input: base };
+      const input = { ...base, image_url: images[0] };
+      if (images[1]) input.end_image_url = images[1];
+      return { model: 'hailuo/02-image-to-video-pro', input };
+    },
+    cost: () => 57,
+  },
+};
+
+export const modelsFor = (kind) => (kind === 'video' ? VIDEO_MODELS : IMAGE_MODELS);
+
+// Options par défaut = première valeur de chaque liste.
+export function defaultOpts(model, current = {}) {
+  const o = {};
+  for (const [k, vals] of Object.entries(model.options)) o[k] = vals.includes(current[k]) ? current[k] : vals[0];
+  return o;
+}
+
+export function formatCost(credits) {
+  if (credits == null) return '? crédits';
+  return `≈ ${credits} crédits (~${(credits * CREDIT_USD).toFixed(2)} $)`;
+}
