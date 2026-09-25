@@ -66,7 +66,8 @@ export async function runNode(boardId, nodeId) {
     for (const o of outs) urls.push(await publicUrl(s.apiKey, o));
 
     const { model: kieModel, input } = model.build({
-      prompt: d.prompt, ratio: d.ratio, opts, refs: urls, images: urls,
+      prompt: d.prompt,
+      ratio: model.ratios?.includes(d.ratio) ? d.ratio : model.defaultRatio || model.ratios?.[0], opts, refs: urls, images: urls,
     });
     if (d.extra?.trim()) Object.assign(input, JSON.parse(d.extra));
 

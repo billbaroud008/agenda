@@ -101,6 +101,7 @@ export function GenControls({ id, data, kind, hideRatio }) {
   const models = modelsFor(kind);
   const model = models[data.model];
   const opts = defaultOpts(model, data.opts);
+  const ratio = model.ratios?.includes(data.ratio) ? data.ratio : model.defaultRatio || model.ratios?.[0];
   const set = (p) => patchActive(id, p);
   const version = data.versions[data.current];
   const src = useMediaUrl(version?.mediaId, version?.url);
@@ -117,11 +118,14 @@ export function GenControls({ id, data, kind, hideRatio }) {
         rows={3}
       />
       <div className="row nodrag">
-        <select value={data.model} onChange={(e) => set({ model: e.target.value })}>
+        <select value={data.model} onChange={(e) => {
+          const m = models[e.target.value];
+          set({ model: e.target.value, ...(m.ratios && !m.ratios.includes(data.ratio) && { ratio: m.defaultRatio || m.ratios[0] }) });
+        }}>
           {Object.entries(models).map(([k, m]) => <option key={k} value={k}>{m.label}</option>)}
         </select>
         {model.ratios && !hideRatio && (
-          <select value={data.ratio} onChange={(e) => set({ ratio: e.target.value })} title="Format">
+          <select value={ratio} onChange={(e) => set({ ratio: e.target.value })} title="Format">
             {model.ratios.map((r) => <option key={r}>{r}</option>)}
           </select>
         )}

@@ -52,15 +52,16 @@ export const IMAGE_MODELS = {
 // Vidéo : images reliées = premier frame, puis dernier frame si le modèle le permet.
 const table = (t) => (o) => t[o.resolution]?.[o.duration] ?? null;
 
-// Seedance 2 Mini : premier/dernier frame OU multi-référence (modes exclusifs chez KIE).
-const S2_DURATIONS = Array.from({ length: 12 }, (_, i) => String(i + 4));
-const s2 = (mode) => ({
-  label: mode === 'frames' ? 'Seedance 2 Mini · premier/dernier frame' : 'Seedance 2 Mini · multi-référence',
-  maxImages: mode === 'frames' ? 2 : 9,
-  imageRoles: mode === 'frames' ? ['Premier frame', 'Dernier frame'] : Array.from({ length: 9 }, (_, i) => `Réf. ${i + 1}`),
-  options: { duration: S2_DURATIONS, resolution: ['720p', '480p'], audio: ['avec son', 'sans son'] },
+// Seedance 2.x : premier/dernier frame OU multi-référence (modes exclusifs chez KIE).
+const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => String(a + i));
+const seedance2 = ({ name, kieModel, maxDuration, maxRefs, resolutions, defaultRatio }) => (mode) => ({
+  label: `${name} · ${mode === 'frames' ? 'premier/dernier frame' : 'multi-référence'}`,
+  maxImages: mode === 'frames' ? 2 : maxRefs,
+  imageRoles: mode === 'frames' ? ['Premier frame', 'Dernier frame'] : range(1, maxRefs).map((n) => `Réf. ${n}`),
+  options: { duration: range(4, maxDuration), resolution: resolutions, audio: ['avec son', 'sans son'] },
   defaults: { duration: '5' },
-  ratios: ['16:9', '9:16', '1:1', '4:3', '3:4', '21:9', 'adaptive'],
+  ratios: ['adaptive', '16:9', '9:16', '1:1', '4:3', '3:4', '21:9'],
+  defaultRatio,
   ratioWithImages: true,
   build: ({ prompt, images, ratio, opts }) => {
     const input = {
@@ -73,12 +74,23 @@ const s2 = (mode) => ({
     } else if (images.length) {
       input.reference_image_urls = images;
     }
-    return { model: 'bytedance/seedance-2-mini', input };
+    return { model: kieModel, input };
   },
   cost: () => null, // tarif à vérifier sur kie.ai/pricing
 });
 
+const s25 = seedance2({
+  name: 'Seedance 2.5', kieModel: 'bytedance/seedance-2-5', maxDuration: 30, maxRefs: 30,
+  resolutions: ['720p', '480p', '1080p'], defaultRatio: 'adaptive',
+});
+const s2 = seedance2({
+  name: 'Seedance 2 Mini', kieModel: 'bytedance/seedance-2-mini', maxDuration: 15, maxRefs: 9,
+  resolutions: ['720p', '480p'], defaultRatio: '16:9',
+});
+
 export const VIDEO_MODELS = {
+  'seedance-2-5-frames': s25('frames'),
+  'seedance-2-5-refs': s25('refs'),
   'seedance-2-mini-frames': s2('frames'),
   'seedance-2-mini-refs': s2('refs'),
   'seedance-lite': {
