@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0",
     "@xyflow/react": "^12.12.0",
     "idb": "^8.0.3",
     "react": "^19.3.0",

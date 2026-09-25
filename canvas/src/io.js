@@ -14,7 +14,7 @@ export async function exportBoards(ids) {
   const { boards } = useStore.getState();
   const list = ids.map((id) => boards[id]).map(({ id, name, nodes, edges, viewport, createdAt }) => ({
     id, name, createdAt, viewport,
-    nodes: nodes.map(({ selected, dragging, ...n }) => ({ ...n, data: { ...n.data, task: null } })),
+    nodes: nodes.map(({ selected, dragging, ...n }) => ({ ...n, data: { ...n.data, tasks: [] } })),
     edges: edges.map(({ selected, ...e }) => e),
   }));
   const media = {};

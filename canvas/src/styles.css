@@ -90,3 +90,33 @@ textarea:focus, input:focus, select:focus { outline: 1px solid var(--accent); }
 .error details { margin-top: 4px; color: var(--muted); }
 .error summary { cursor: pointer; }
 .error pre { max-height: 180px; overflow: auto; font-size: 10.5px; background: var(--bg); padding: 6px; border-radius: 6px; white-space: pre-wrap; user-select: text; }
+
+/* Assistant Claude */
+.prompt-wrap { position: relative; }
+.prompt-wrap .prompt { padding-right: 34px; }
+.claude-btn { position: absolute; top: 5px; right: 5px; padding: 3px 6px; font-size: 13px; background: transparent; border-color: transparent; }
+.claude-btn:hover, .claude-btn.on { background: #2a2c39; border-color: #d4a27f; }
+.claude { border: 1px solid #d4a27f66; background: #241f1c; border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 6px; }
+.claude .primary { background: #c96f4a; border-color: #c96f4a; }
+.row .spacer { flex: 1; }
+
+/* Versions */
+.versions button { position: relative; }
+.vbadge { position: absolute; right: 1px; bottom: 1px; font-size: 8px; font-weight: 700; background: var(--accent); color: #fff; padding: 0 2px; border-radius: 3px; }
+.preview .expand { position: absolute; top: 6px; right: 6px; opacity: 0; background: #12131acc; transition: opacity .15s; }
+.preview:hover .expand { opacity: 1; }
+
+/* Plein écran */
+.viewer { position: fixed; inset: 0; z-index: 200; background: #08090c; display: flex; flex-direction: column; }
+.viewer-bar { display: flex; align-items: center; gap: 10px; padding: 10px 16px; }
+.viewer-bar .muted { flex: 1; font-size: 12px; }
+.viewer-main { flex: 1; min-height: 0; display: flex; gap: 12px; padding: 0 16px; }
+.viewer-main figure { flex: 1; min-width: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.viewer-main img, .viewer-main video, .viewer-empty { flex: 1; min-height: 0; width: 100%; object-fit: contain; }
+.viewer-main figcaption { display: flex; justify-content: space-between; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+.viewer-strip { display: flex; gap: 6px; padding: 10px 16px; overflow-x: auto; justify-content: center; }
+.viewer-strip button { padding: 0; border-radius: 6px; overflow: hidden; flex: none; opacity: .55; }
+.viewer-strip button.on { opacity: 1; border-color: var(--accent); }
+.viewer-strip button.on-b { opacity: 1; border-color: var(--video); }
+.viewer-strip .vthumb { width: 56px; height: 56px; }
+@media (max-width: 700px) { .viewer-main.split { flex-direction: column; } }

@@ -9,7 +9,9 @@ const WEEK = 7 * 86400000;
 
 function Settings({ onClose }) {
   const apiKey = useStore((s) => s.apiKey);
+  const anthropicKey = useStore((s) => s.anthropicKey);
   const [key, setKey] = useState(apiKey);
+  const [aKey, setAKey] = useState(anthropicKey);
   return (
     <div className="modal-bg" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -22,9 +24,17 @@ function Settings({ onClose }) {
           Récupère-la sur <a href="https://kie.ai/api-key" target="_blank" rel="noreferrer">kie.ai/api-key</a>.
           Elle reste stockée dans ce navigateur uniquement.
         </p>
+        <label>
+          Clé API Anthropic (assistant de prompt ✨)
+          <input type="password" value={aKey} onChange={(e) => setAKey(e.target.value)} placeholder="sk-ant-…" />
+        </label>
+        <p className="muted small">
+          Crée-la sur <a href="https://platform.claude.com/settings/keys" target="_blank" rel="noreferrer">platform.claude.com</a>.
+          Stockée dans ce navigateur uniquement.
+        </p>
         <div className="row end">
           <button onClick={onClose}>Annuler</button>
-          <button className="primary" onClick={() => { useStore.getState().setApiKey(key.trim()); onClose(); }}>Enregistrer</button>
+          <button className="primary" onClick={() => { useStore.getState().setApiKey(key.trim()); useStore.getState().setAnthropicKey(aKey.trim()); onClose(); }}>Enregistrer</button>
         </div>
       </div>
     </div>

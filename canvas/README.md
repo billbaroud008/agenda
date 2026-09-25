@@ -10,7 +10,7 @@ npm install
 npm run dev      # http://localhost:5173
 ```
 
-Au premier lancement, colle ta clé API KIE (⚙). Elle reste dans le navigateur.
+Au premier lancement, colle ta clé API KIE (⚙) et, pour l'assistant ✨, ta clé API Anthropic. Elles restent dans le navigateur.
 
 > Utilise `npm run dev` : le serveur local relaie les appels KIE et les téléchargements (évite les blocages CORS).
 > `npm run build` produit une version statique, qui appelle KIE directement.
@@ -23,6 +23,12 @@ Au premier lancement, colle ta clé API KIE (⚙). Elle reste dans le navigateur
 | **Import** | Glisser-déposer une image (sur le nœud ou n'importe où sur le canvas). |
 | **Vidéo** | Seedance 2.5 et 2 Mini (premier/dernier frame ou multi-référence : 30 / 9 images), Seedance Lite/Pro, Minimax Hailuo 02 Standard/Pro. 0 image = texte→vidéo, 1 image = premier frame, 2 images = premier + dernier frame (⇄ pour inverser). |
 | **Note** | Texte libre, redimensionnable. |
+
+**Dans chaque nœud Image/Vidéo :**
+- ✨ dans le prompt : Claude réécrit le prompt d'après ta demande, les images reliées et le modèle choisi (↶ pour annuler).
+- ×1 à ×4 : nombre de variantes lancées en parallèle.
+- 4K : relance l'image affichée en 4K avec Nano Banana Pro, sans rien changer.
+- ⛶ ou double-clic sur l'aperçu : plein écran, ← → pour parcourir, « Comparer » pour deux versions côte à côte, « Garder celle-ci ».
 
 Suppr / Retour arrière supprime la sélection. `⋯` ouvre un champ JSON pour ajouter des paramètres KIE bruts.
 

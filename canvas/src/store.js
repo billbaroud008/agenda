@@ -19,6 +19,7 @@ export const useStore = create((set, get) => ({
   boards: {},
   activeId: null,
   apiKey: '',
+  anthropicKey: '',
 
   async init() {
     let list = await listBoards();
@@ -35,6 +36,7 @@ export const useStore = create((set, get) => ({
       boards,
       activeId: boards[last] ? last : list.sort((a, b) => a.createdAt - b.createdAt)[0].id,
       apiKey: (await getSetting('apiKey')) || '',
+      anthropicKey: (await getSetting('anthropicKey')) || '',
       ready: true,
     });
   },
@@ -42,6 +44,11 @@ export const useStore = create((set, get) => ({
   setApiKey(k) {
     set({ apiKey: k });
     setSetting('apiKey', k);
+  },
+
+  setAnthropicKey(k) {
+    set({ anthropicKey: k });
+    setSetting('anthropicKey', k);
   },
 
   setActive(id) {
@@ -120,7 +127,7 @@ export const useStore = create((set, get) => ({
       if (!src) return {};
       const id = uid();
       const data = structuredClone(src.data);
-      if ('versions' in data) Object.assign(data, { versions: [], current: -1, task: null, error: null });
+      if ('versions' in data) Object.assign(data, { versions: [], current: -1, tasks: [], error: null });
       const node = {
         ...structuredClone({ type: src.type, style: src.style }),
         id, data, selected: false,

@@ -154,6 +154,12 @@ export const VIDEO_MODELS = {
   },
 };
 
+// Upscale : l'image affichée repasse dans Nano Banana Pro en 4K.
+export const UPSCALE = {
+  prompt: 'Upscale this image to 4K. Keep it strictly identical: same composition, faces, clothes, colors, lighting and details. Only increase resolution, sharpness and texture quality.',
+  cost: 24,
+};
+
 export const modelsFor = (kind) => (kind === 'video' ? VIDEO_MODELS : IMAGE_MODELS);
 
 // Options par défaut = première valeur de chaque liste.

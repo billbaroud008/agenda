@@ -1,5 +1,6 @@
 import { Handle, Position } from '@xyflow/react';
-import { GenControls, Media, Progress, Versions, useInputs, Thumb } from './common.jsx';
+import { useState } from 'react';
+import { GenControls, Media, Progress, Versions, useInputs, Thumb, Viewer } from './common.jsx';
 import { VIDEO_MODELS } from '../models.js';
 import { useStore } from '../store.js';
 
@@ -15,6 +16,7 @@ function swapInputs(nodeId) {
 
 export default function VideoNode({ id, data, selected }) {
   const inputs = useInputs(id);
+  const [viewer, setViewer] = useState(false);
   const model = VIDEO_MODELS[data.model];
   const hideRatio = !model.ratios || (inputs.length > 0 && !model.ratioWithImages);
   const ratio = hideRatio || data.ratio === 'adaptive' ? '16/9' : data.ratio.replace(':', '/');
@@ -34,11 +36,13 @@ export default function VideoNode({ id, data, selected }) {
         </div>
       )}
       <div className="preview" style={{ aspectRatio: ratio }}>
-        <Media version={data.versions[data.current]} kind="video" />
-        <Progress task={data.task} />
+        <Media version={data.versions[data.current]} kind="video" onOpen={() => setViewer(true)} />
+        {data.versions.length > 0 && <button className="icon expand nodrag" title="Plein écran / comparer" onClick={() => setViewer(true)}>⛶</button>}
+        <Progress tasks={data.tasks} />
       </div>
       <Versions id={id} data={data} kind="video" />
-      <GenControls id={id} data={data} kind="video" hideRatio={hideRatio} />
+      {viewer && <Viewer id={id} data={data} kind="video" onClose={() => setViewer(false)} />}
+      <GenControls id={id} data={data} kind="video" hideRatio={hideRatio} inputs={inputs.slice(0, model.maxImages)} roles={model.imageRoles} />
     </div>
   );
 }
