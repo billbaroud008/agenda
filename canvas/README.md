@@ -4,6 +4,10 @@ Canvas infini à nœuds (React Flow) pour générer images et vidéos via **KIE.
 
 ## Lancer
 
+**Sur Mac : double-clic sur `Lancer Canvas.command`** (à la racine du dossier `agenda`). Il met à jour, installe si besoin, lance le serveur et ouvre le navigateur. Fermer la fenêtre arrête le canvas.
+
+À la main :
+
 ```bash
 cd canvas
 npm install
