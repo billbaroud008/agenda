@@ -147,7 +147,17 @@ export function GenControls({ id, data, kind, hideRatio }) {
         <button className="icon" title="Dupliquer" onClick={() => useStore.getState().duplicateNode(id)}>⧉</button>
         <button className="primary icon" title="Générer" disabled={busy} onClick={() => runNode(useStore.getState().activeId, id)}>▶</button>
       </div>
-      {data.error && <div className="error">{data.error}</div>}
+      {data.error && (
+        <div className="error nodrag">
+          {data.error}
+          {data.lastRequest && (
+            <details>
+              <summary>Requête envoyée</summary>
+              <pre className="nowheel">{JSON.stringify(data.lastRequest, null, 2)}</pre>
+            </details>
+          )}
+        </div>
+      )}
     </div>
   );
 }

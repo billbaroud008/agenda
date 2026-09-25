@@ -70,7 +70,13 @@ export async function runNode(boardId, nodeId) {
     });
     if (d.extra?.trim()) Object.assign(input, JSON.parse(d.extra));
 
-    const taskId = await createTask(useStore.getState().apiKey, kieModel, input);
+    patch({ lastRequest: { model: kieModel, input } });
+    let taskId;
+    try {
+      taskId = await createTask(useStore.getState().apiKey, kieModel, input);
+    } catch (e) {
+      throw new Error(`KIE a refusé l’envoi (${kieModel}) : ${e.message}`);
+    }
     patch({
       task: {
         id: taskId, status: 'waiting', startedAt: Date.now(), kind,
@@ -103,7 +109,7 @@ export async function track(boardId, nodeId) {
         const r = await getTask(s.apiKey, t.id);
         errors = 0;
         if (r.state === 'fail') {
-          patch({ task: null, error: r.error || 'Échec de la génération' });
+          patch({ task: null, error: `Génération échouée chez KIE : ${r.error || 'sans détail'}` });
           return;
         }
         if (r.state === 'success') {

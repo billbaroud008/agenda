@@ -14,7 +14,8 @@ async function call(apiKey, url, { method = 'GET', body } = {}) {
   });
   const j = await r.json().catch(() => null);
   if (!r.ok || !j || (j.code !== 200 && j.success !== true)) {
-    throw new Error(j?.msg || `Erreur HTTP ${r.status}`);
+    console.warn('KIE', url, body, j);
+    throw new Error(`${j?.code ?? r.status} ${j?.msg || 'erreur'}`);
   }
   return j.data;
 }
@@ -33,7 +34,8 @@ export async function getTask(apiKey, taskId) {
     urls = res.resultUrls || res.resultUrl || [];
     if (typeof urls === 'string') urls = [urls];
   } catch { /* résultat illisible */ }
-  return { state: d.state, urls, error: d.failMsg || d.failCode };
+  const error = [d.failCode, d.failMsg].filter(Boolean).join(' – ');
+  return { state: d.state, urls, error };
 }
 
 export const getCredits = (apiKey) => call(apiKey, `${API}/api/v1/chat/credit`);

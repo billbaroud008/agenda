@@ -87,3 +87,6 @@ textarea:focus, input:focus, select:focus { outline: 1px solid var(--accent); }
 .modal h3 { margin: 0; }
 .modal label { display: flex; flex-direction: column; gap: 6px; }
 .modal input { padding: 8px; }
+.error details { margin-top: 4px; color: var(--muted); }
+.error summary { cursor: pointer; }
+.error pre { max-height: 180px; overflow: auto; font-size: 10.5px; background: var(--bg); padding: 6px; border-radius: 6px; white-space: pre-wrap; user-select: text; }
