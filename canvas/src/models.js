@@ -52,7 +52,35 @@ export const IMAGE_MODELS = {
 // Vidéo : images reliées = premier frame, puis dernier frame si le modèle le permet.
 const table = (t) => (o) => t[o.resolution]?.[o.duration] ?? null;
 
+// Seedance 2 Mini : premier/dernier frame OU multi-référence (modes exclusifs chez KIE).
+const S2_DURATIONS = Array.from({ length: 12 }, (_, i) => String(i + 4));
+const s2 = (mode) => ({
+  label: mode === 'frames' ? 'Seedance 2 Mini · premier/dernier frame' : 'Seedance 2 Mini · multi-référence',
+  maxImages: mode === 'frames' ? 2 : 9,
+  imageRoles: mode === 'frames' ? ['Premier frame', 'Dernier frame'] : Array.from({ length: 9 }, (_, i) => `Réf. ${i + 1}`),
+  options: { duration: S2_DURATIONS, resolution: ['720p', '480p'], audio: ['avec son', 'sans son'] },
+  defaults: { duration: '5' },
+  ratios: ['16:9', '9:16', '1:1', '4:3', '3:4', '21:9', 'adaptive'],
+  ratioWithImages: true,
+  build: ({ prompt, images, ratio, opts }) => {
+    const input = {
+      prompt, resolution: opts.resolution, aspect_ratio: ratio,
+      duration: Number(opts.duration), generate_audio: opts.audio === 'avec son',
+    };
+    if (mode === 'frames') {
+      if (images[0]) input.first_frame_url = images[0];
+      if (images[1]) input.last_frame_url = images[1];
+    } else if (images.length) {
+      input.reference_image_urls = images;
+    }
+    return { model: 'bytedance/seedance-2-mini', input };
+  },
+  cost: () => null, // tarif à vérifier sur kie.ai/pricing
+});
+
 export const VIDEO_MODELS = {
+  'seedance-2-mini-frames': s2('frames'),
+  'seedance-2-mini-refs': s2('refs'),
   'seedance-lite': {
     label: 'Seedance 1.0 Lite',
     maxImages: 2,
@@ -119,11 +147,13 @@ export const modelsFor = (kind) => (kind === 'video' ? VIDEO_MODELS : IMAGE_MODE
 // Options par défaut = première valeur de chaque liste.
 export function defaultOpts(model, current = {}) {
   const o = {};
-  for (const [k, vals] of Object.entries(model.options)) o[k] = vals.includes(current[k]) ? current[k] : vals[0];
+  for (const [k, vals] of Object.entries(model.options)) {
+    o[k] = vals.includes(current[k]) ? current[k] : model.defaults?.[k] ?? vals[0];
+  }
   return o;
 }
 
 export function formatCost(credits) {
-  if (credits == null) return '? crédits';
+  if (credits == null) return 'coût : voir kie.ai/pricing';
   return `≈ ${credits} crédits (~${(credits * CREDIT_USD).toFixed(2)} $)`;
 }

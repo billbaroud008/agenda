@@ -9,7 +9,7 @@ export const newBoard = (name) => ({
 
 export const DEFAULT_DATA = {
   image: { prompt: '', model: 'nano-banana', ratio: '1:1', opts: {}, extra: '', versions: [], current: -1 },
-  video: { prompt: '', model: 'seedance-lite', ratio: '16:9', opts: {}, extra: '', versions: [], current: -1 },
+  video: { prompt: '', model: 'seedance-2-mini-frames', ratio: '16:9', opts: {}, extra: '', versions: [], current: -1 },
   import: { mediaId: null, name: '' },
   note: { text: '' },
 };

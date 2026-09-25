@@ -21,7 +21,7 @@ Au premier lancement, colle ta clé API KIE (⚙). Elle reste dans le navigateur
 |---|---|
 | **Image** | Prompt + modèle (Nano Banana, Nano Banana Pro, Seedream 4) + format. ▶ génère, ⧉ duplique (prompt, réglages et liens entrants). Images reliées en entrée = références (mode édition). Historique des versions sous l'aperçu. |
 | **Import** | Glisser-déposer une image (sur le nœud ou n'importe où sur le canvas). |
-| **Vidéo** | Seedance Lite/Pro, Minimax Hailuo 02 Standard/Pro. 0 image = texte→vidéo, 1 image = premier frame, 2 images = premier + dernier frame (⇄ pour inverser). |
+| **Vidéo** | Seedance 2 Mini (premier/dernier frame ou jusqu’à 9 références), Seedance Lite/Pro, Minimax Hailuo 02 Standard/Pro. 0 image = texte→vidéo, 1 image = premier frame, 2 images = premier + dernier frame (⇄ pour inverser). |
 | **Note** | Texte libre, redimensionnable. |
 
 Suppr / Retour arrière supprime la sélection. `⋯` ouvre un champ JSON pour ajouter des paramètres KIE bruts.

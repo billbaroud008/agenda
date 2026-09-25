@@ -16,7 +16,8 @@ function swapInputs(nodeId) {
 export default function VideoNode({ id, data, selected }) {
   const inputs = useInputs(id);
   const model = VIDEO_MODELS[data.model];
-  const ratio = inputs.length || !model.ratios ? '16/9' : data.ratio.replace(':', '/');
+  const hideRatio = !model.ratios || (inputs.length > 0 && !model.ratioWithImages);
+  const ratio = hideRatio || data.ratio === 'adaptive' ? '16/9' : data.ratio.replace(':', '/');
   return (
     <div className={`node gen video ${selected ? 'selected' : ''}`}>
       <Handle type="target" position={Position.Left} id="images" title="Images" />
@@ -37,7 +38,7 @@ export default function VideoNode({ id, data, selected }) {
         <Progress task={data.task} />
       </div>
       <Versions id={id} data={data} kind="video" />
-      <GenControls id={id} data={data} kind="video" hideRatio={inputs.length > 0} />
+      <GenControls id={id} data={data} kind="video" hideRatio={hideRatio} />
     </div>
   );
 }
