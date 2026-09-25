@@ -29,27 +29,32 @@ async function blobOf({ mediaId, url }) {
   return url ? downloadBlob(url) : null;
 }
 
+// Prépare la demande : texte + images réduites en JPEG base64.
 // images : [{ mediaId, url, role }]
-export async function askClaude({ apiKey, kind, modelLabel, prompt, instruction, images }) {
-  if (!apiKey) throw new Error('Clé API Anthropic manquante (⚙ Réglages)');
-  const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
-
-  const content = [];
+async function buildRequest({ kind, modelLabel, prompt, instruction, images }) {
+  const imgs = [];
   for (const img of images) {
     const blob = await blobOf(img).catch(() => null);
-    if (!blob?.type.startsWith('image/')) continue;
-    content.push({ type: 'text', text: `${img.role} :` });
-    content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: await toJpegBase64(blob) } });
+    if (blob?.type.startsWith('image/')) imgs.push({ role: img.role, data: await toJpegBase64(blob) });
   }
-  content.push({
-    type: 'text',
-    text: [
-      `Type : ${kind === 'video' ? 'vidéo' : 'image'}`,
-      `Modèle cible : ${modelLabel}`,
-      `Prompt actuel : ${prompt.trim() || '(vide)'}`,
-      `Consigne : ${instruction.trim() || 'améliore le prompt'}`,
-    ].join('\n'),
-  });
+  const text = [
+    `Type : ${kind === 'video' ? 'vidéo' : 'image'}`,
+    `Modèle cible : ${modelLabel}`,
+    `Prompt actuel : ${prompt.trim() || '(vide)'}`,
+    `Consigne : ${instruction.trim() || 'améliore le prompt'}`,
+  ].join('\n');
+  return { system: SYSTEM, text, images: imgs };
+}
+
+// Via l'API Anthropic (clé API, facturée à l'usage).
+async function viaApi(apiKey, { system, text, images }) {
+  const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
+  const content = [];
+  for (const img of images) {
+    content.push({ type: 'text', text: `${img.role} :` });
+    content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: img.data } });
+  }
+  content.push({ type: 'text', text });
 
   const response = await client.beta.messages.create({
     model: 'claude-opus-5',
@@ -58,14 +63,45 @@ export async function askClaude({ apiKey, kind, modelLabel, prompt, instruction,
     output_config: { effort: 'medium' },
     betas: ['server-side-fallback-2026-07-01'],
     fallbacks: 'default',
-    system: SYSTEM,
+    system,
     messages: [{ role: 'user', content }],
   });
 
   if (response.stop_reason === 'refusal') {
     throw new Error(`Claude a refusé : ${response.stop_details?.explanation || 'demande non traitée'}`);
   }
-  const text = response.content.filter((b) => b.type === 'text').map((b) => b.text).join('').trim();
+  return response.content.filter((b) => b.type === 'text').map((b) => b.text).join('');
+}
+
+// Via Claude Code installé sur l'ordinateur (abonnement Claude, sans clé API).
+async function viaClaudeCode(request) {
+  if (!import.meta.env.DEV) throw new Error('Claude Code n’est joignable qu’avec « npm run dev »');
+  const r = await fetch('/claude-local', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || `Claude Code : erreur ${r.status}`);
+  return j.text;
+}
+
+// Clé API renseignée → API ; sinon Claude Code (abonnement).
+export async function askClaude({ apiKey, ...params }) {
+  const request = await buildRequest(params);
+  const text = (apiKey ? await viaApi(apiKey, request) : await viaClaudeCode(request)).trim();
   if (!text) throw new Error('Réponse vide');
   return text;
+}
+
+// Secours manuel : demande à coller dans le chat claude.ai (images à glisser à la main).
+export function copyText({ kind, modelLabel, prompt, instruction, roles }) {
+  return [
+    SYSTEM,
+    roles.length ? `Je joins ${roles.length} image(s), dans cet ordre :\n${roles.map((r, i) => `${i + 1}. ${r}`).join('\n')}` : '',
+    `Type : ${kind === 'video' ? 'vidéo' : 'image'}`,
+    `Modèle cible : ${modelLabel}`,
+    `Prompt actuel : ${prompt.trim() || '(vide)'}`,
+    `Consigne : ${instruction.trim() || 'améliore le prompt'}`,
+  ].filter(Boolean).join('\n\n');
 }

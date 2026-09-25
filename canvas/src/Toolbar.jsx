@@ -25,12 +25,12 @@ function Settings({ onClose }) {
           Elle reste stockée dans ce navigateur uniquement.
         </p>
         <label>
-          Clé API Anthropic (assistant de prompt ✨)
+          Clé API Anthropic (facultatif)
           <input type="password" value={aKey} onChange={(e) => setAKey(e.target.value)} placeholder="sk-ant-…" />
         </label>
         <p className="muted small">
-          Crée-la sur <a href="https://platform.claude.com/settings/keys" target="_blank" rel="noreferrer">platform.claude.com</a>.
-          Stockée dans ce navigateur uniquement.
+          Laisse vide pour que l’assistant ✨ passe par Claude Code et ton abonnement Claude.
+          Remplis-la seulement pour utiliser l’API (facturée à l’usage).
         </p>
         <div className="row end">
           <button onClick={onClose}>Annuler</button>

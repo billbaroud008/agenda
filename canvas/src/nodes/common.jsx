@@ -6,7 +6,7 @@ import { useStore, patchActive } from '../store.js';
 import { modelsFor, defaultOpts, formatCost } from '../models.js';
 import { runNode, upscaleNode, inputsOf, outputOf, costOf } from '../runner.js';
 import { UPSCALE } from '../models.js';
-import { askClaude } from '../claude.js';
+import { askClaude, copyText } from '../claude.js';
 
 const urlCache = new Map();
 
@@ -177,18 +177,24 @@ function ClaudePanel({ id, data, kind, modelLabel, inputs, roles, onClose }) {
   const [error, setError] = useState(null);
   const [previous, setPrevious] = useState(null);
 
+  const [copied, setCopied] = useState(false);
+  const version = data.versions[data.current];
+  const images = inputs.map((i, k) => ({ ...i, role: roles[k] }));
+  if (version && kind === 'image') images.push({ ...version, role: 'Résultat actuel du nœud' });
+
+  const setPrompt = (prompt) => {
+    setPrevious(data.prompt);
+    patchActive(id, { prompt });
+  };
+
   const ask = async () => {
     setBusy(true);
     setError(null);
     try {
-      const version = data.versions[data.current];
-      const images = inputs.map((i, k) => ({ ...i, role: roles[k] }));
-      if (version && kind === 'image') images.push({ ...version, role: 'Résultat actuel du nœud' });
       const prompt = await askClaude({
         apiKey: anthropicKey, kind, modelLabel, prompt: data.prompt, instruction, images,
       });
-      setPrevious(data.prompt);
-      patchActive(id, { prompt });
+      setPrompt(prompt);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -214,8 +220,23 @@ function ClaudePanel({ id, data, kind, modelLabel, inputs, roles, onClose }) {
         <span className="spacer" />
         <button className="icon" title="Fermer" onClick={onClose}>✕</button>
       </div>
-      {!anthropicKey && <div className="error">Ajoute ta clé Anthropic dans ⚙ Réglages.</div>}
-      {error && <div className="error">{error}</div>}
+      <div className="muted small">{anthropicKey ? 'Via l’API Anthropic' : 'Via Claude Code (ton abonnement)'}</div>
+      {error && (
+        <div className="error">
+          {error}
+          <div className="row manual">
+            <span>Sinon, en passant par le chat claude.ai :</span>
+            <button onClick={async () => {
+              await navigator.clipboard.writeText(copyText({ kind, modelLabel, prompt: data.prompt, instruction, roles: images.map((i) => i.role) }));
+              setCopied(true);
+            }}>{copied ? '✓ Copié' : '📋 Copier la demande'}</button>
+            <button onClick={async () => {
+              const text = (await navigator.clipboard.readText()).trim();
+              if (text) { setPrompt(text); setError(null); }
+            }}>📥 Coller la réponse</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

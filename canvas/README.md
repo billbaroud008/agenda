@@ -10,7 +10,9 @@ npm install
 npm run dev      # http://localhost:5173
 ```
 
-Au premier lancement, colle ta clé API KIE (⚙) et, pour l'assistant ✨, ta clé API Anthropic. Elles restent dans le navigateur.
+Au premier lancement, colle ta clé API KIE (⚙). Elle reste dans le navigateur.
+
+**Assistant ✨ (Claude)** : il passe par **Claude Code** installé sur l'ordinateur, donc par ton abonnement Claude, sans clé API. Il faut avoir lancé `claude` une fois pour te connecter. Si tu renseignes une clé API Anthropic dans ⚙, c'est l'API qui est utilisée à la place. En cas d'échec, « Copier la demande » / « Coller la réponse » permettent de passer par le chat claude.ai.
 
 > Utilise `npm run dev` : le serveur local relaie les appels KIE et les téléchargements (évite les blocages CORS).
 > `npm run build` produit une version statique, qui appelle KIE directement.
@@ -25,7 +27,7 @@ Au premier lancement, colle ta clé API KIE (⚙) et, pour l'assistant ✨, ta c
 | **Note** | Texte libre, redimensionnable. |
 
 **Dans chaque nœud Image/Vidéo :**
-- ✨ dans le prompt : Claude réécrit le prompt d'après ta demande, les images reliées et le modèle choisi (↶ pour annuler).
+- ✨ dans le prompt : Claude réécrit le prompt d'après ta demande, les images reliées et le modèle choisi (↶ pour annuler). Ne marche qu'avec `npm run dev`.
 - ×1 à ×4 : nombre de variantes lancées en parallèle.
 - 4K : relance l'image affichée en 4K avec Nano Banana Pro, sans rien changer.
 - ⛶ ou double-clic sur l'aperçu : plein écran, ← → pour parcourir, « Comparer » pour deux versions côte à côte, « Garder celle-ci ».
