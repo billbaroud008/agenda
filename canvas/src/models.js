@@ -11,20 +11,41 @@ const SEEDREAM_SIZE = {
   '16:9': 'landscape_16_9', '2:3': 'portrait_3_2', '3:2': 'landscape_3_2', '21:9': 'landscape_21_9',
 };
 
-export const IMAGE_MODELS = {
-  'nano-banana': {
-    label: 'Nano Banana',
-    maxRefs: 10,
-    ratios: RATIOS,
-    options: {},
-    build: ({ prompt, ratio, refs }) =>
-      refs.length
-        ? { model: 'google/nano-banana-edit', input: { prompt, image_urls: refs, output_format: 'png', image_size: ratio } }
-        : { model: 'google/nano-banana', input: { prompt, output_format: 'png', image_size: ratio } },
-    cost: () => 4,
+const GPT_RATIOS = ['auto', '1:1', '3:2', '2:3'];
+
+// GPT Image : texte → image, ou image → image quand des images sont reliées.
+// ⚠ Le nom du paramètre de résolution n'a pas pu être vérifié dans la doc KIE.
+const gptImage = ({ label, t2i, i2i, cost }) => ({
+  label,
+  maxRefs: 10,
+  ratios: GPT_RATIOS,
+  defaultRatio: 'auto',
+  options: { resolution: ['1K', '2K', '4K'] },
+  build: ({ prompt, ratio, refs, opts }) => {
+    const input = { prompt, aspect_ratio: ratio, resolution: opts.resolution };
+    return refs.length
+      ? { model: i2i, input: { ...input, input_urls: refs } }
+      : { model: t2i, input };
   },
+  cost,
+});
+
+export const IMAGE_MODELS = {
+  'gpt-image-2-5': gptImage({
+    label: 'GPT Image 2.5 (à vérifier)',
+    // ⚠ Absent de la doc et du comparateur : identifiants supposés, calqués sur GPT Image 2.
+    t2i: 'gpt-image-2-5-text-to-image',
+    i2i: 'gpt-image-2-5-image-to-image',
+    cost: () => null,
+  }),
+  'gpt-image-2': gptImage({
+    label: 'GPT Image 2',
+    t2i: 'gpt-image-2-text-to-image',
+    i2i: 'gpt-image-2-image-to-image',
+    cost: (o) => ({ '1K': 6, '2K': 10, '4K': 16 })[o.resolution],
+  }),
   'nano-banana-pro': {
-    label: 'Nano Banana Pro',
+    label: 'Google Nano Banana Pro',
     maxRefs: 8,
     ratios: RATIOS,
     options: { resolution: ['1K', '2K', '4K'] },
@@ -34,7 +55,31 @@ export const IMAGE_MODELS = {
     }),
     cost: (o) => (o.resolution === '4K' ? 24 : 18),
   },
+  'nano-banana': {
+    label: 'Google Nano Banana',
+    maxRefs: 10,
+    ratios: RATIOS,
+    options: {},
+    build: ({ prompt, ratio, refs }) =>
+      refs.length
+        ? { model: 'google/nano-banana-edit', input: { prompt, image_urls: refs, output_format: 'png', image_size: ratio } }
+        : { model: 'google/nano-banana', input: { prompt, output_format: 'png', image_size: ratio } },
+    cost: () => 4,
+  },
+  'grok-imagine-image-2': {
+    label: 'Grok Imagine Image 2.0',
+    maxRefs: 4,
+    ratios: ['1:1', '3:2', '2:3', '16:9', '9:16'],
+    options: {},
+    // ⚠ Identifiant de l'édition d'image supposé (« image-edit ») : à confirmer dans la doc KIE.
+    build: ({ prompt, ratio, refs }) =>
+      refs.length
+        ? { model: 'grok-imagine-image-2-0/image-edit', input: { prompt, image_urls: refs, aspect_ratio: ratio } }
+        : { model: 'grok-imagine-image-2-0/text-to-image', input: { prompt, aspect_ratio: ratio } },
+    cost: () => 4,
+  },
   'seedream-4': {
+    other: true,
     label: 'Seedream 4.0',
     maxRefs: 10,
     ratios: RATIOS,
@@ -85,6 +130,11 @@ const s25 = seedance2({
   resolutions: ['720p', '480p', '1080p'], defaultRatio: 'adaptive',
   perSecond: { '480p': 28, '720p': 63, '1080p': 114 },
 });
+const s20 = seedance2({
+  name: 'Seedance 2', kieModel: 'bytedance/seedance-2', maxDuration: 15, maxRefs: 9,
+  resolutions: ['720p', '480p', '1080p'], defaultRatio: 'adaptive',
+  perSecond: { '480p': 19, '720p': 41, '1080p': 102 },
+});
 const s2 = seedance2({
   name: 'Seedance 2 Mini', kieModel: 'bytedance/seedance-2-mini', maxDuration: 15, maxRefs: 9,
   resolutions: ['720p', '480p'], defaultRatio: '16:9',
@@ -94,9 +144,43 @@ const s2 = seedance2({
 export const VIDEO_MODELS = {
   'seedance-2-5-frames': s25('frames'),
   'seedance-2-5-refs': s25('refs'),
+  'seedance-2-frames': s20('frames'),
+  'seedance-2-refs': s20('refs'),
   'seedance-2-mini-frames': s2('frames'),
   'seedance-2-mini-refs': s2('refs'),
+  'minimax-h3': {
+    label: 'MiniMax H3',
+    maxImages: 1,
+    imageRoles: ['Premier frame'],
+    // ⚠ Durées et noms de paramètres supposés (doc KIE non consultable ici) : à vérifier.
+    options: { duration: ['6', '10'], resolution: ['768p', '2K'] },
+    ratios: ['16:9', '9:16', '1:1'],
+    build: ({ prompt, images, ratio, opts }) => {
+      const base = { prompt, duration: opts.duration, resolution: opts.resolution };
+      return images.length
+        ? { model: 'minimax-h3/image-to-video', input: { ...base, image_url: images[0] } }
+        : { model: 'minimax-h3/text-to-video', input: { ...base, aspect_ratio: ratio } };
+    },
+    // Crédits par seconde, + 8 crédits par image en entrée.
+    cost: (o) => ({ '768p': 16, '2K': 26 })[o.resolution] * Number(o.duration),
+  },
+  'grok-imagine': {
+    label: 'Grok Imagine',
+    maxImages: 1,
+    imageRoles: ['Image de départ'],
+    options: { duration: ['6', '10'], resolution: ['480p', '720p', '1080p'] },
+    ratios: ['16:9', '9:16', '1:1', '2:3', '3:2'],
+    ratioWithImages: true,
+    build: ({ prompt, images, ratio, opts }) => {
+      const input = { prompt, mode: 'normal', duration: opts.duration, resolution: opts.resolution, aspect_ratio: ratio };
+      return images.length
+        ? { model: 'grok-imagine/image-to-video', input: { ...input, image_urls: images } }
+        : { model: 'grok-imagine/text-to-video', input };
+    },
+    cost: (o) => Math.round(({ '480p': 2.4, '720p': 4.5, '1080p': 8 })[o.resolution] * Number(o.duration) * 10) / 10,
+  },
   'seedance-lite': {
+    other: true,
     label: 'Seedance 1.0 Lite',
     maxImages: 2,
     imageRoles: ['Premier frame', 'Dernier frame'],
@@ -112,6 +196,7 @@ export const VIDEO_MODELS = {
     cost: table({ '480p': { 5: 10, 10: 20 }, '720p': { 5: 22.5, 10: 45 }, '1080p': { 5: 50, 10: 100 } }),
   },
   'seedance-pro': {
+    other: true,
     label: 'Seedance 1.0 Pro',
     maxImages: 1,
     imageRoles: ['Premier frame'],
@@ -126,6 +211,7 @@ export const VIDEO_MODELS = {
     cost: table({ '480p': { 5: 14, 10: 28 }, '720p': { 5: 30, 10: 60 }, '1080p': { 5: 70, 10: 140 } }),
   },
   'hailuo-standard': {
+    other: true,
     label: 'Minimax Hailuo 02 Standard',
     maxImages: 2,
     imageRoles: ['Premier frame', 'Dernier frame'],
@@ -141,6 +227,7 @@ export const VIDEO_MODELS = {
     cost: table({ '512P': { 6: 12, 10: 20 }, '768P': { 6: 30, 10: 50 } }),
   },
   'hailuo-pro': {
+    other: true,
     label: 'Minimax Hailuo 02 Pro (1080P)',
     maxImages: 2,
     imageRoles: ['Premier frame', 'Dernier frame'],

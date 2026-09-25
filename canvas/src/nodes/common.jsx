@@ -281,7 +281,10 @@ export function GenControls({ id, data, kind, hideRatio, inputs = [], roles = []
           const m = models[e.target.value];
           set({ model: e.target.value, ...(m.ratios && !m.ratios.includes(data.ratio) && { ratio: m.defaultRatio || m.ratios[0] }) });
         }}>
-          {Object.entries(models).map(([k, m]) => <option key={k} value={k}>{m.label}</option>)}
+          {Object.entries(models).filter(([, m]) => !m.other).map(([k, m]) => <option key={k} value={k}>{m.label}</option>)}
+          <optgroup label="Autres modèles">
+            {Object.entries(models).filter(([, m]) => m.other).map(([k, m]) => <option key={k} value={k}>{m.label}</option>)}
+          </optgroup>
         </select>
         {model.ratios && !hideRatio && (
           <select value={ratio} onChange={(e) => set({ ratio: e.target.value })} title="Format">
