@@ -2,6 +2,7 @@ import { useEffect, useCallback } from 'react';
 import { ReactFlow, ReactFlowProvider, Background, Controls, MiniMap, useReactFlow } from '@xyflow/react';
 import { useStore } from './store.js';
 import { resumeAll } from './runner.js';
+import { initDisk } from './disk.js';
 import ImageNode from './nodes/ImageNode.jsx';
 import VideoNode from './nodes/VideoNode.jsx';
 import ImportNode, { importFile as importImage } from './nodes/ImportNode.jsx';
@@ -32,6 +33,7 @@ function Canvas() {
     }
   }, [rf, addNode]);
 
+  if (!board) return null;
   return (
     <ReactFlow
       nodes={board.nodes}
@@ -64,7 +66,7 @@ export default function App() {
   const activeId = useStore((s) => s.activeId);
 
   useEffect(() => {
-    useStore.getState().init().then(resumeAll);
+    useStore.getState().init().then(initDisk).then(resumeAll);
   }, []);
 
   if (!ready) return <div className="loading">Chargement…</div>;

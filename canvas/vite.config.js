@@ -5,6 +5,7 @@ import { existsSync } from 'node:fs';
 import { tmpdir, homedir } from 'node:os';
 import { join } from 'node:path';
 import react from '@vitejs/plugin-react';
+import { diskPlugin } from './server/disk.js';
 
 // En dev, les appels KIE passent par ce serveur local : évite les soucis CORS.
 const rewrite = (prefix) => (p) => p.replace(prefix, '');
@@ -101,7 +102,7 @@ const claudeLocal = {
 
 export default defineConfig({
   base: './',
-  plugins: [react(), downloadProxy, claudeLocal],
+  plugins: [react(), downloadProxy, claudeLocal, diskPlugin],
   server: {
     proxy: {
       '/kie-api': { target: 'https://api.kie.ai', changeOrigin: true, rewrite: rewrite(/^\/kie-api/) },

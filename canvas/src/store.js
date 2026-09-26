@@ -2,6 +2,12 @@ import { create } from 'zustand';
 import { applyNodeChanges, applyEdgeChanges, addEdge } from '@xyflow/react';
 import { listBoards, saveBoard, deleteBoardDb, getSetting, setSetting, gcMedia, uid } from './db.js';
 
+// Images Claude d'un nœud : fermées, elles ne sont pas réimportées.
+const sourcesOf = (n) => (n.data.versions || []).map((v) => v.source).filter(Boolean);
+
+// Branchements de la sauvegarde disque (voir disk.js).
+export const hooks = { save: null, remove: null };
+
 export const newBoard = (name) => ({
   id: uid(), name, nodes: [], edges: [], viewport: { x: 0, y: 0, zoom: 1 },
   createdAt: Date.now(), updatedAt: Date.now(),
@@ -24,7 +30,7 @@ export const useStore = create((set, get) => ({
   async init() {
     let list = await listBoards();
     if (!list.length) {
-      const b = newBoard('Projet 1');
+      const b = { ...newBoard('Projet 1'), placeholder: true };
       await saveBoard(b);
       list = [b];
     }
@@ -84,6 +90,7 @@ export const useStore = create((set, get) => ({
       rest[b.id] = b;
     }
     delete lastSaved[id];
+    await hooks.remove?.(boards[id]);
     await deleteBoardDb(id);
     set({ boards: rest });
     get().setActive(Object.values(rest).sort((a, b) => a.createdAt - b.createdAt)[0].id);
@@ -100,7 +107,34 @@ export const useStore = create((set, get) => ({
 
   // --- Canvas actif ---
   onNodesChange(changes) {
-    get().updateBoard(get().activeId, (b) => ({ nodes: applyNodeChanges(changes, b.nodes) }));
+    get().updateBoard(get().activeId, (b) => {
+      const removed = new Set(changes.filter((c) => c.type === 'remove').map((c) => c.id));
+      const dismissed = b.nodes.filter((n) => removed.has(n.id)).flatMap(sourcesOf);
+      return {
+        nodes: applyNodeChanges(changes, b.nodes),
+        ...(dismissed.length && { claudeDismissed: [...(b.claudeDismissed || []), ...dismissed] }),
+      };
+    });
+  },
+  removeNode(nodeId) {
+    get().onNodesChange([{ type: 'remove', id: nodeId }]);
+    get().onEdgesChange(
+      get().boards[get().activeId].edges.filter((e) => e.source === nodeId || e.target === nodeId).map((e) => ({ type: 'remove', id: e.id })),
+    );
+  },
+  // Retire une version de l'historique d'un nœud.
+  removeVersion(nodeId, index) {
+    get().updateBoard(get().activeId, (b) => {
+      const n = b.nodes.find((x) => x.id === nodeId);
+      const v = n?.data.versions?.[index];
+      if (!v) return {};
+      const versions = n.data.versions.filter((_, i) => i !== index);
+      const current = Math.min(Math.max(0, n.data.current - (index <= n.data.current ? 1 : 0)), versions.length - 1);
+      return {
+        nodes: b.nodes.map((x) => (x.id === nodeId ? { ...x, data: { ...x.data, versions, current } } : x)),
+        ...(v.source && { claudeDismissed: [...(b.claudeDismissed || []), v.source] }),
+      };
+    });
   },
   onEdgesChange(changes) {
     get().updateBoard(get().activeId, (b) => ({ edges: applyEdgeChanges(changes, b.edges) }));
@@ -180,6 +214,7 @@ export async function flush() {
     if (lastSaved[id] === b) continue;
     lastSaved[id] = b;
     await saveBoard(clean(b));
+    hooks.save?.(clean(b));
   }
 }
 

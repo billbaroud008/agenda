@@ -4,6 +4,7 @@ import { useStore } from './store.js';
 import { exportBoards, importFile } from './io.js';
 import { getCredits } from './kie.js';
 import { getSetting } from './db.js';
+import { diskState, setRoot } from './disk.js';
 
 const WEEK = 7 * 86400000;
 
@@ -12,6 +13,8 @@ function Settings({ onClose }) {
   const anthropicKey = useStore((s) => s.anthropicKey);
   const [key, setKey] = useState(apiKey);
   const [aKey, setAKey] = useState(anthropicKey);
+  const [root, setRootInput] = useState(diskState.root || '');
+  const [rootMsg, setRootMsg] = useState(null);
   return (
     <div className="modal-bg" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -24,6 +27,25 @@ function Settings({ onClose }) {
           Récupère-la sur <a href="https://kie.ai/api-key" target="_blank" rel="noreferrer">kie.ai/api-key</a>.
           Elle reste stockée dans ce navigateur uniquement.
         </p>
+        {import.meta.env.DEV && (
+          <>
+            <label>
+              Dossier de travail (images Claude + sauvegarde des boards)
+              <div className="row">
+                <input value={root} onChange={(e) => setRootInput(e.target.value)} placeholder="~/Documents/CLAUDE DOC" style={{ flex: 1 }} />
+                <button onClick={async () => {
+                  try {
+                    const r = await setRoot(root.trim());
+                    setRootMsg(r.exists ? '✓ Dossier trouvé — recharge la page pour l’appliquer' : '✗ Dossier introuvable');
+                  } catch (e) { setRootMsg(e.message); }
+                }}>Changer</button>
+              </div>
+            </label>
+            <p className="muted small">
+              {rootMsg || (diskState.available ? '✓ Boards enregistrés dans « canvas/ » de ce dossier ; chaque sous-dossier d’images Claude devient un board.' : '✗ Dossier introuvable : sauvegarde disque désactivée.')}
+            </p>
+          </>
+        )}
         <label>
           Clé API Anthropic (facultatif)
           <input type="password" value={aKey} onChange={(e) => setAKey(e.target.value)} placeholder="sk-ant-…" />

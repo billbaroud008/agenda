@@ -122,3 +122,14 @@ textarea:focus, input:focus, select:focus { outline: 1px solid var(--accent); }
 @media (max-width: 700px) { .viewer-main.split { flex-direction: column; } }
 .claude .manual { margin-top: 6px; color: var(--muted); }
 .claude .manual span { flex-basis: 100%; }
+
+/* Croix de fermeture */
+.node { position: relative; }
+.node-close { position: absolute; top: 4px; right: 4px; z-index: 5; padding: 1px 6px; font-size: 11px; line-height: 16px; background: transparent; border-color: transparent; color: var(--muted); opacity: .6; }
+.node:hover .node-close { opacity: 1; }
+.node-close:hover { background: #3a1f24; border-color: var(--err); color: var(--err); }
+.node-title { padding-right: 22px; }
+.vclose { position: absolute; top: -1px; right: -1px; width: 14px; height: 14px; display: none; place-items: center; font-size: 9px; background: #12131add; color: var(--ink); border-radius: 0 5px 0 5px; }
+.versions button:hover .vclose { display: grid; }
+.vclose:hover { background: var(--err); }
+.vcaption { font-size: 11px; color: var(--muted); margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

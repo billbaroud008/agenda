@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { useMediaUrl } from './common.jsx';
+import { useMediaUrl, CloseButton } from './common.jsx';
 import { patchActive } from '../store.js';
 import { putMedia } from '../db.js';
 
@@ -20,6 +20,7 @@ export default function ImportNode({ id, data, selected }) {
 
   return (
     <div className={`node import ${selected ? 'selected' : ''}`}>
+      <CloseButton id={id} />
       <div className="node-title">Import {data.name && <span className="muted">· {data.name}</span>}</div>
       <div
         className={`drop nodrag ${over ? 'over' : ''}`}

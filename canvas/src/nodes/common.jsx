@@ -43,6 +43,13 @@ export function useInputs(nodeId) {
   });
 }
 
+// Croix de fermeture en haut à droite d'un nœud.
+export function CloseButton({ id }) {
+  return (
+    <button className="node-close nodrag" title="Fermer (supprimer ce nœud)" onClick={() => useStore.getState().removeNode(id)}>✕</button>
+  );
+}
+
 export function Thumb({ mediaId, url, className }) {
   const src = useMediaUrl(mediaId, url);
   return src ? <img className={className} src={src} alt="" draggable={false} /> : <div className={`${className} empty`} />;
@@ -86,7 +93,7 @@ export function Progress({ tasks }) {
 }
 
 export function Versions({ id, data, kind }) {
-  if (data.versions.length < 2) return null;
+  if (!data.versions.length) return null;
   return (
     <div className="versions nodrag nowheel">
       {data.versions.map((v, i) => (
@@ -94,10 +101,15 @@ export function Versions({ id, data, kind }) {
           key={i}
           className={i === data.current ? 'on' : ''}
           title={`${v.label ? `${v.label} · ` : ''}${v.model} — ${new Date(v.createdAt).toLocaleString()}\n${v.prompt}`}
-          onClick={() => patchActive(id, { current: i })}
+          onClick={() => patchActive(id, { current: i, ...(v.prompt && { prompt: v.prompt }) })}
         >
           {kind === 'video' ? <span className="vnum">{i + 1}</span> : <Thumb mediaId={v.mediaId} url={v.url} className="vthumb" />}
-          {v.label && <span className="vbadge">4K</span>}
+          {v.label === 'Upscale 4K' && <span className="vbadge">4K</span>}
+          <span
+            className="vclose"
+            title="Retirer cette version"
+            onClick={(e) => { e.stopPropagation(); useStore.getState().removeVersion(id, i); }}
+          >✕</span>
         </button>
       ))}
     </div>
@@ -130,7 +142,7 @@ export function Viewer({ id, data, kind, onClose }) {
   });
 
   const info = (v, i) => `${i + 1}/${n}${v.label ? ` · ${v.label}` : ''} · ${v.model}`;
-  const keep = (i) => { patchActive(id, { current: i }); onClose(); };
+  const keep = (i) => { const p = data.versions[i].prompt; patchActive(id, { current: i, ...(p && { prompt: p }) }); onClose(); };
 
   return createPortal(
     <div className="viewer" onClick={onClose}>

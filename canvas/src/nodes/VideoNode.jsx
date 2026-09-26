@@ -1,6 +1,6 @@
 import { Handle, Position } from '@xyflow/react';
 import { useState } from 'react';
-import { GenControls, Media, Progress, Versions, useInputs, Thumb, Viewer } from './common.jsx';
+import { GenControls, Media, Progress, Versions, useInputs, Thumb, Viewer, CloseButton } from './common.jsx';
 import { VIDEO_MODELS } from '../models.js';
 import { useStore } from '../store.js';
 
@@ -23,6 +23,7 @@ export default function VideoNode({ id, data, selected }) {
   return (
     <div className={`node gen video ${selected ? 'selected' : ''}`}>
       <Handle type="target" position={Position.Left} id="images" title="Images" />
+      <CloseButton id={id} />
       <div className="node-title">Vidéo <span className="muted">· {inputs.length ? 'image → vidéo' : 'texte → vidéo'}</span></div>
       {inputs.length > 0 && (
         <div className="inputs roles">
