@@ -2,6 +2,22 @@ import { create } from 'zustand';
 import { applyNodeChanges, applyEdgeChanges, addEdge } from '@xyflow/react';
 import { listBoards, saveBoard, deleteBoardDb, getSetting, setSetting, gcMedia, uid } from './db.js';
 
+const TYPE_TITLE = { image: 'Image', video: 'Vidéo', import: 'Import', note: 'Note' };
+export const titleOf = (n) => n.data.title || n.data.name?.replace(/\.[^.]+$/, '') || TYPE_TITLE[n.type] || '';
+
+// Grille de 4 colonnes, nœuds triés par titre (« 2 » avant « 10 »).
+export function arrangeNodes(nodes) {
+  const sorted = [...nodes].sort((a, b) => titleOf(a).localeCompare(titleOf(b), 'fr', { numeric: true }));
+  const pos = new Map();
+  let y = 0;
+  for (let i = 0; i < sorted.length; i += 4) {
+    const row = sorted.slice(i, i + 4);
+    row.forEach((n, k) => pos.set(n.id, { x: k * 380, y }));
+    y += Math.max(...row.map((n) => n.measured?.height || (n.type === 'note' ? 160 : 760))) + 60;
+  }
+  return nodes.map((n) => ({ ...n, position: pos.get(n.id) }));
+}
+
 // Images Claude d'un nœud : fermées, elles ne sont pas réimportées.
 const sourcesOf = (n) => (n.data.versions || []).map((v) => v.source).filter(Boolean);
 
@@ -110,11 +126,17 @@ export const useStore = create((set, get) => ({
     get().updateBoard(get().activeId, (b) => {
       const removed = new Set(changes.filter((c) => c.type === 'remove').map((c) => c.id));
       const dismissed = b.nodes.filter((n) => removed.has(n.id)).flatMap(sourcesOf);
+      // Un nœud déplacé à la main désactive le rangement automatique du board.
+      const moved = changes.some((c) => c.type === 'position' && c.dragging === false);
       return {
         nodes: applyNodeChanges(changes, b.nodes),
         ...(dismissed.length && { claudeDismissed: [...(b.claudeDismissed || []), ...dismissed] }),
+        ...(moved && { autoArrange: false }),
       };
     });
+  },
+  arrangeByTitle() {
+    get().updateBoard(get().activeId, (b) => ({ nodes: arrangeNodes(b.nodes), autoArrange: true }));
   },
   removeNode(nodeId) {
     get().onNodesChange([{ type: 'remove', id: nodeId }]);

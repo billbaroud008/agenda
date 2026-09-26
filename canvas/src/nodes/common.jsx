@@ -43,6 +43,30 @@ export function useInputs(nodeId) {
   });
 }
 
+// Titre du nœud : celui du document ; double-clic pour le modifier.
+export function NodeTitle({ id, title, fallback, children }) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState('');
+  const save = () => { patchActive(id, { title: value.trim() }); setEditing(false); };
+  if (editing) {
+    return (
+      <input
+        className="node-title-input nodrag"
+        autoFocus
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={save}
+        onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditing(false); }}
+      />
+    );
+  }
+  return (
+    <div className="node-title" title="Double-clic pour renommer" onDoubleClick={() => { setValue(title || ''); setEditing(true); }}>
+      {title || fallback} {children}
+    </div>
+  );
+}
+
 // Croix de fermeture en haut à droite d'un nœud.
 export function CloseButton({ id }) {
   return (

@@ -13,6 +13,7 @@ Quand tu génères une image ou une vidéo et que tu l'enregistres dans un sous-
 
 ```json
 {
+  "title": "11 Chercheur d'or",
   "prompt": "le prompt complet envoyé au modèle",
   "model": "GPT Image 2.5 Flare",
   "settings": { "ratio": "3:4", "resolution": "2K" },
@@ -23,6 +24,7 @@ Quand tu génères une image ou une vidéo et que tu l'enregistres dans un sous-
 }
 ```
 
+- `title` : titre affiché sur le nœud (facultatif, sinon tiré du nom du fichier).
 - `reference` : nom du fichier d'image de référence dans le même dossier (ou `null`).
 - Ne mets jamais d'autre fichier `.json` dans ces dossiers.
 - Pour les images déjà créées sans `.json`, relis la conversation et écris les fichiers manquants.

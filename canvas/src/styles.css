@@ -133,3 +133,5 @@ textarea:focus, input:focus, select:focus { outline: 1px solid var(--accent); }
 .versions button:hover .vclose { display: grid; }
 .vclose:hover { background: var(--err); }
 .vcaption { font-size: 11px; color: var(--muted); margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.node-title { cursor: text; }
+.node-title-input { width: calc(100% - 26px); margin: 0 2px 6px; padding: 2px 6px; font-weight: 650; font-size: 12px; }

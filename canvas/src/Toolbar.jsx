@@ -125,6 +125,7 @@ export default function Toolbar() {
       <button onClick={() => add('import')}>＋ Import</button>
       <button onClick={() => add('video')}>＋ Vidéo</button>
       <button onClick={() => add('note')}>＋ Note</button>
+      <button title="Ranger les nœuds en grille, triés par titre" onClick={() => store.arrangeByTitle()}>▦ Ranger par titre</button>
 
       <span className="spacer" />
       <button className={oldExport ? 'warn' : ''} title={oldExport ? 'Pas d’export depuis plus de 7 jours' : 'Exporter ce board en .json'} onClick={() => doExport([activeId])}>Exporter</button>

@@ -27,6 +27,7 @@ Réglable dans ⚙. Ne fonctionne qu'avec `npm run dev` / `Lancer Canvas.command
 
 - **Sauvegarde des boards** : chaque board est aussi écrit dans `CLAUDE DOC/canvas/<board>/` (`board.json` + `medias/`). Si le navigateur est vidé, tout est rechargé depuis ce dossier. Un board supprimé part dans `canvas/_supprimés/`.
 - **Images de Claude** : chaque sous-dossier (hors `canvas`) devient un board. Les images arrivent seules (vérification toutes les 5 s), groupées par numéro de personnage, avec le prompt lu dans le `.json` voisin. Voir [CONSIGNE-CLAUDE.md](CONSIGNE-CLAUDE.md) pour la consigne à donner à Claude.
+- Chaque nœud porte le **titre du document** (tiré du nom du fichier, ou du champ `title` du `.json`) ; double-clic pour le renommer. Les nœuds sont **rangés par titre** en grille ; déplacer un nœud à la main arrête le rangement automatique, « ▦ Ranger par titre » le relance.
 - ✕ sur un nœud ou une version : la retire du canvas (les fichiers de Claude ne sont jamais modifiés, et l'image n'est pas réimportée).
 
 ## Nœuds
