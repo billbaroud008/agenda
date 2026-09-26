@@ -1,5 +1,6 @@
 import { Handle, Position } from '@xyflow/react';
 import { useState } from 'react';
+import { titleOfData } from '../store.js';
 import { GenControls, Media, Progress, Versions, useInputs, Thumb, Viewer, CloseButton, NodeTitle } from './common.jsx';
 import { IMAGE_MODELS } from '../models.js';
 
@@ -11,7 +12,7 @@ export default function ImageNode({ id, data, selected }) {
     <div className={`node gen image ${selected ? 'selected' : ''}`}>
       <Handle type="target" position={Position.Left} id="refs" title="Images de référence" />
       <CloseButton id={id} />
-      <NodeTitle id={id} title={data.title} fallback="Image">{inputs.length > 0 && <span className="muted">· {inputs.length} réf.</span>}</NodeTitle>
+      <NodeTitle id={id} title={data.title} fallback={titleOfData('image', data)}>{inputs.length > 0 && <span className="muted">· {inputs.length} réf.</span>}</NodeTitle>
       {inputs.length > 0 && (
         <div className="inputs">
           {inputs.map((i, k) => <Thumb key={k} mediaId={i.mediaId} url={i.url} className={`ithumb ${k >= model.maxRefs ? 'over' : ''}`} />)}

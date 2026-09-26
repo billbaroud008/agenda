@@ -1,7 +1,7 @@
 // Synchronisation avec le disque (serveur de dev uniquement) :
 // 1. chaque board est aussi enregistré dans <racine>/canvas/<board>/ ;
 // 2. les images générées par Claude (<racine>/<dossier>/*.png + .json) arrivent seules dans le canvas.
-import { useStore, hooks, DEFAULT_DATA, arrangeNodes } from './store.js';
+import { useStore, hooks, DEFAULT_DATA, arrangeNodes, titleFromFile } from './store.js';
 import { getMedia, putMedia, hasMedia, mediaIdsOf, getSetting, setSetting, uid, deleteBoardDb } from './db.js';
 import { IMAGE_MODELS } from './models.js';
 
@@ -87,17 +87,6 @@ async function loadFromDisk() {
 }
 
 // --- 2. Images générées par Claude ---------------------------------------
-
-// « 11-chercheur-d-or-flare.png » et « 11-chercheur-d-or-zimage.png » → même personnage « 11 ».
-const groupKey = (name) => name.match(/^(\d+)[-_ ]/)?.[1] || name.replace(/\.[^.]+$/, '');
-
-// « 11-chercheur-d-or-flare.png » → « 11 chercheur d or » (sans le nom du modèle à la fin).
-const MODEL_WORDS = /^(zimage|z-image|flare|sunburst|gpt|gpt2|gpt25|nano|banana|nanobanana|pro|lite|seedream|grok|imagen|flux|mj|v\d+)$/i;
-function titleFromFile(name) {
-  const parts = name.replace(/\.[^.]+$/, '').split(/[-_ ]+/);
-  while (parts.length > 2 && MODEL_WORDS.test(parts[parts.length - 1])) parts.pop();
-  return parts.join(' ');
-}
 
 // Associe le nom de modèle écrit par Claude à un modèle du canvas (pour pouvoir relancer).
 function modelFor(meta) {

@@ -3,7 +3,23 @@ import { applyNodeChanges, applyEdgeChanges, addEdge } from '@xyflow/react';
 import { listBoards, saveBoard, deleteBoardDb, getSetting, setSetting, gcMedia, uid } from './db.js';
 
 const TYPE_TITLE = { image: 'Image', video: 'Vidéo', import: 'Import', note: 'Note' };
-export const titleOf = (n) => n.data.title || n.data.name?.replace(/\.[^.]+$/, '') || TYPE_TITLE[n.type] || '';
+// « 11-chercheur-d-or-flare.png » → « 11 chercheur d or » (sans le nom du modèle à la fin).
+const MODEL_WORDS = /^(zimage|z-image|flare|sunburst|gpt|gpt2|gpt25|nano|banana|nanobanana|pro|lite|seedream|grok|imagen|flux|mj|v\d+)$/i;
+export function titleFromFile(name) {
+  const parts = name.replace(/^.*\//, '').replace(/\.[^.]+$/, '').split(/[-_ ]+/);
+  while (parts.length > 2 && MODEL_WORDS.test(parts[parts.length - 1])) parts.pop();
+  return parts.join(' ');
+}
+
+// Titre affiché : titre saisi, sinon nom du fichier d'origine (images Claude, imports), sinon le type.
+export function titleOfData(type, data) {
+  const source = data.versions?.find((v) => v.source)?.source;
+  return data.title
+    || (source && titleFromFile(source))
+    || data.name?.replace(/\.[^.]+$/, '')
+    || TYPE_TITLE[type] || '';
+}
+export const titleOf = (n) => titleOfData(n.type, n.data);
 
 // Grille de 4 colonnes, nœuds triés par titre (« 2 » avant « 10 »).
 export function arrangeNodes(nodes) {
