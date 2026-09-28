@@ -30,6 +30,34 @@
   .item figcaption{position:absolute;inset:auto 0 0 0;padding:14px 16px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;background:linear-gradient(transparent,rgba(0,0,0,.45));color:#fff;opacity:0;transition:opacity .3s}
   .item:hover figcaption{opacity:1}
 
+  .toolbar{max-width:1400px;margin:0 auto;padding:0 24px 28px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .filters{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+  .chip,.tbtn{font:500 11px/1 Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;padding:9px 14px;border:1px solid var(--line);background:none;color:var(--muted);cursor:pointer;transition:.2s}
+  .chip:hover,.tbtn:hover{color:var(--ink);border-color:var(--ink)}
+  .chip.active{color:var(--bg);background:var(--ink);border-color:var(--ink)}
+  .chip .del{margin-left:8px;opacity:.6}
+  .chip .del:hover{opacity:1}
+  .chip .n{margin-left:6px;opacity:.6}
+  .tbtn.primary{color:var(--ink);border-color:var(--ink)}
+  .edit-only{display:none}
+  body.edit .edit-only{display:inline-flex}
+  body.edit .view-only{display:none}
+  .newcat{display:none;gap:0}
+  body.edit .newcat{display:flex}
+  .newcat input{font:12px Inter,sans-serif;padding:8px 10px;border:1px solid var(--line);border-right:0;background:#fff;color:var(--ink);width:150px}
+  .hint{max-width:1400px;margin:-12px auto 20px;padding:0 24px;font-size:12px;color:var(--muted);display:none}
+  body.edit .hint{display:block}
+
+  body.edit .gallery{columns:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px}
+  body.edit .item{margin:0;cursor:grab;background:#fff;border:1px solid var(--line);padding:8px}
+  body.edit .item img{aspect-ratio:4/3;object-fit:cover}
+  body.edit .item:hover img{transform:none}
+  body.edit .item figcaption{position:static;opacity:1;background:none;color:var(--ink);padding:8px 0 6px;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  body.edit .item.dragging{opacity:.35}
+  body.edit .item.over{outline:2px solid var(--ink);outline-offset:2px}
+  .item select{display:none;width:100%;font:12px Inter,sans-serif;padding:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+  body.edit .item select{display:block}
+
   .empty{max-width:640px;margin:40px auto 120px;padding:48px 24px;text-align:center;border:1px dashed var(--line);color:var(--muted);line-height:1.7}
   .empty code{background:#efece6;padding:2px 6px;border-radius:4px;color:var(--ink)}
   .empty label{display:inline-block;margin-top:14px;padding:10px 18px;border:1px solid var(--ink);color:var(--ink);cursor:pointer;font-size:12px;letter-spacing:.14em;text-transform:uppercase}
@@ -55,6 +83,15 @@
 </header>
 <section class="intro"><h1>Illustrations — ingénierie, industrie &amp; ville durable</h1></section>
 
+<div class="toolbar">
+  <div class="filters" id="filters"></div>
+  <span class="newcat"><input id="catName" placeholder="Nouvelle catégorie"><button class="tbtn" id="catAdd">Ajouter</button></span>
+  <button class="tbtn edit-only" id="exportBtn" title="Télécharge classement.js à placer dans le dossier de la galerie">Exporter</button>
+  <button class="tbtn primary view-only" id="editBtn">Classer</button>
+  <button class="tbtn primary edit-only" id="doneBtn">Terminé</button>
+</div>
+<p class="hint">Glissez les images pour changer l'ordre · choisissez une catégorie sous chaque image · enregistré automatiquement dans ce navigateur (« Exporter » pour le garder dans un fichier).</p>
+
 <main class="gallery" id="gallery"></main>
 
 <div class="empty" id="empty" hidden>
@@ -75,42 +112,152 @@
 <footer>© Siemens Illustration</footer>
 
 <script src="images.js"></script>
+<script src="classement.js" onerror="void 0"></script>
 <script>
   const gallery = document.getElementById('gallery');
   const empty = document.getElementById('empty');
+  const filtersEl = document.getElementById('filters');
   const lb = document.getElementById('lb');
   const lbImg = lb.querySelector('img');
   const lbCap = lb.querySelector('.cap');
-  let items = [], current = 0;
+  const KEY = 'siemens-classement';
 
-  function render(list) {
-    items = list;
+  let all = [];          // toutes les images
+  let shown = [];        // images affichées (après filtre)
+  let filter = '';       // '' = tout
+  let current = 0;
+  let dragFile = null;
+
+  // Classement : { categories: [], order: [fichiers], cat: { fichier: catégorie } }
+  let state = { categories: [], order: [], cat: {} };
+  try { const saved = JSON.parse(localStorage.getItem(KEY)); if (saved) state = saved; } catch {}
+  if (!state.order.length && window.CLASSEMENT) state = structuredClone(window.CLASSEMENT);
+
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+  const fileOf = src => decodeURIComponent(src.split('/').pop());
+
+  function load(list) {
+    all = list.map(it => ({ ...it, file: it.file || fileOf(it.src) }));
+    all.forEach(it => { if (!state.order.includes(it.file)) state.order.push(it.file); });
+    render();
+  }
+
+  function sorted() {
+    const pos = new Map(state.order.map((f, i) => [f, i]));
+    return [...all].sort((a, b) => pos.get(a.file) - pos.get(b.file));
+  }
+
+  function renderFilters() {
+    filtersEl.innerHTML = '';
+    const count = c => all.filter(it => (state.cat[it.file] || '') === c).length;
+    const make = (label, value, n) => {
+      const b = document.createElement('button');
+      b.className = 'chip' + (filter === value ? ' active' : '');
+      b.textContent = label;
+      if (n !== undefined) { const s = document.createElement('span'); s.className = 'n'; s.textContent = n; b.append(s); }
+      b.onclick = () => { filter = value; render(); };
+      if (value && value !== '∅' && document.body.classList.contains('edit')) {
+        const x = document.createElement('span'); x.className = 'del'; x.textContent = '×'; x.title = 'Supprimer la catégorie';
+        x.onclick = e => {
+          e.stopPropagation();
+          if (!confirm(`Supprimer la catégorie « ${value} » ? Les images restent, sans catégorie.`)) return;
+          state.categories = state.categories.filter(c => c !== value);
+          for (const f in state.cat) if (state.cat[f] === value) delete state.cat[f];
+          if (filter === value) filter = '';
+          save(); render();
+        };
+        b.append(x);
+      }
+      filtersEl.append(b);
+    };
+    make('Tout', '', all.length);
+    state.categories.forEach(c => make(c, c, count(c)));
+    const none = count('');
+    if (none && state.categories.length) make('Sans catégorie', '∅', none);
+  }
+
+  function render() {
+    renderFilters();
+    shown = sorted().filter(it => {
+      const c = state.cat[it.file] || '';
+      return !filter || (filter === '∅' ? !c : c === filter);
+    });
     gallery.innerHTML = '';
-    empty.hidden = list.length > 0;
-    list.forEach((it, i) => {
+    empty.hidden = all.length > 0;
+    shown.forEach((it, i) => {
       const fig = document.createElement('figure');
       fig.className = 'item';
       const img = new Image();
       img.loading = 'lazy';
       img.alt = it.title;
+      img.draggable = false;
       img.onload = () => img.classList.add('loaded');
       img.src = it.src;
       const cap = document.createElement('figcaption');
       cap.textContent = it.title;
-      fig.append(img, cap);
-      fig.onclick = () => open(i);
+
+      const sel = document.createElement('select');
+      sel.innerHTML = '<option value="">— Sans catégorie —</option>' +
+        state.categories.map(c => `<option>${c.replace(/</g, '&lt;')}</option>`).join('');
+      sel.value = state.cat[it.file] || '';
+      sel.onclick = e => e.stopPropagation();
+      sel.onchange = () => {
+        if (sel.value) state.cat[it.file] = sel.value; else delete state.cat[it.file];
+        save(); render();
+      };
+
+      fig.append(img, cap, sel);
+      fig.onclick = () => { if (!document.body.classList.contains('edit')) open(i); };
+
+      // Glisser-déposer pour réordonner
+      fig.draggable = document.body.classList.contains('edit');
+      fig.ondragstart = e => { dragFile = it.file; fig.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; };
+      fig.ondragend = () => { dragFile = null; fig.classList.remove('dragging'); };
+      fig.ondragover = e => { if (!dragFile) return; e.preventDefault(); e.stopPropagation(); fig.classList.add('over'); };
+      fig.ondragleave = () => fig.classList.remove('over');
+      fig.ondrop = e => {
+        if (!dragFile) return;
+        e.preventDefault(); e.stopPropagation();
+        fig.classList.remove('over');
+        if (dragFile === it.file) return;
+        const order = state.order.filter(f => f !== dragFile);
+        const from = state.order.indexOf(dragFile), to = state.order.indexOf(it.file);
+        order.splice(order.indexOf(it.file) + (from < to ? 1 : 0), 0, dragFile);
+        state.order = order;
+        save(); render();
+      };
       gallery.append(fig);
     });
   }
 
+  // Mode classement
+  const setEdit = on => { document.body.classList.toggle('edit', on); render(); };
+  document.getElementById('editBtn').onclick = () => setEdit(true);
+  document.getElementById('doneBtn').onclick = () => setEdit(false);
+  const catName = document.getElementById('catName');
+  const addCat = () => {
+    const n = catName.value.trim();
+    if (n && !state.categories.includes(n)) { state.categories.push(n); save(); render(); }
+    catName.value = '';
+  };
+  document.getElementById('catAdd').onclick = addCat;
+  catName.onkeydown = e => { if (e.key === 'Enter') addCat(); };
+  document.getElementById('exportBtn').onclick = () => {
+    const blob = new Blob(['window.CLASSEMENT = ' + JSON.stringify(state, null, 2) + ';\n'], { type: 'text/javascript' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'classement.js';
+    a.click();
+  };
+
+  // Visionneuse
   function open(i) {
-    current = (i + items.length) % items.length;
-    lbImg.src = items[current].src;
-    lbCap.textContent = items[current].title;
+    current = (i + shown.length) % shown.length;
+    lbImg.src = shown[current].src;
+    lbCap.textContent = shown[current].title;
     lb.classList.add('open');
   }
   const close = () => lb.classList.remove('open');
-
   lb.querySelector('.lb-close').onclick = close;
   lb.querySelector('.lb-prev').onclick = e => { e.stopPropagation(); open(current - 1); };
   lb.querySelector('.lb-next').onclick = e => { e.stopPropagation(); open(current + 1); };
@@ -122,12 +269,12 @@
     if (e.key === 'ArrowRight') open(current + 1);
   });
 
-  // Chargement local (sans build) : sélection ou glisser-déposer
+  // Chargement local (sans build) : sélection ou glisser-déposer d'un dossier
   function fromFiles(files) {
     const list = [...files].filter(f => f.type.startsWith('image/'))
       .sort((a, b) => a.name.localeCompare(b.name))
-      .map(f => ({ src: URL.createObjectURL(f), title: f.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ') }));
-    if (list.length) render(list);
+      .map(f => ({ src: URL.createObjectURL(f), file: f.name, title: f.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ') }));
+    if (list.length) load(list);
   }
   async function readEntries(entry, out) {
     if (entry.isFile) { out.push(await new Promise(r => entry.file(r))); return; }
@@ -141,9 +288,10 @@
     }
   }
   document.getElementById('picker').onchange = e => fromFiles(e.target.files);
-  addEventListener('dragover', e => { e.preventDefault(); document.body.classList.add('drag'); });
+  addEventListener('dragover', e => { if (dragFile) return; e.preventDefault(); document.body.classList.add('drag'); });
   addEventListener('dragleave', () => document.body.classList.remove('drag'));
   addEventListener('drop', async e => {
+    if (dragFile) return;
     e.preventDefault();
     document.body.classList.remove('drag');
     const files = [];
@@ -154,7 +302,7 @@
     fromFiles(files.length ? files : e.dataTransfer.files);
   });
 
-  render(window.ILLUSTRATIONS || []);
+  load(window.ILLUSTRATIONS || []);
 </script>
 </body>
 </html>

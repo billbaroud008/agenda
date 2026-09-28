@@ -6,3 +6,7 @@
 3. Ouvrir `index.html`
 
 Sans étape 2 : glisser le dossier d'images directement sur la page.
+
+## Classement
+Bouton **Classer** : créer des catégories, en choisir une sous chaque image, glisser pour réordonner.
+Enregistré dans le navigateur. **Exporter** télécharge `classement.js` : le placer à côté de `index.html` pour le garder.
