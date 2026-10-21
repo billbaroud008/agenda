@@ -1,0 +1,50 @@
+@import url("https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;600&display=swap");
+
+:root {
+  --ink: #0d0b0a;
+  --ember: #ff5a1f;
+  --cream: #f2e8da;
+  --smoke: #2a2421;
+  --display: "Anton", "Impact", sans-serif;
+  --serif: "Instrument Serif", Georgia, serif;
+  --sans: "Inter", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; }
+html, body { height: 100%; overflow: hidden; background: #000; }
+
+#stage {
+  position: absolute; top: 50%; left: 50%;
+  overflow: hidden;
+  background: var(--ink); color: var(--cream);
+  font-family: var(--sans);
+  transform-origin: center;
+}
+
+/* Grain */
+#stage::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 50;
+  opacity: .18; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Étiquette IA */
+.ia-label {
+  position: absolute; top: 36px; right: 36px; z-index: 60;
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 20px; border-radius: 999px;
+  background: rgba(13, 11, 10, .72); border: 2px solid var(--cream);
+  font: 600 26px/1 var(--sans); letter-spacing: .04em; color: var(--cream);
+}
+.ia-label::before {
+  content: "IA"; padding: 6px 9px; border-radius: 6px;
+  background: var(--cream); color: var(--ink); font-size: 20px;
+}
+
+/* Flacon */
+.bottle svg { display: block; width: 100%; height: auto; overflow: visible; }
+.bottle .sweep { animation: sweep 4s cubic-bezier(.6, 0, .2, 1) infinite; }
+@keyframes sweep {
+  0%   { transform: translateX(-420px) skewX(-20deg); }
+  60%, 100% { transform: translateX(520px) skewX(-20deg); }
+}

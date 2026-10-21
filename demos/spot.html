@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NOCTA Spot 15s</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  #stage.f-16x9 { width: 1920px; height: 1080px; --big: 300px; --bottle: 340px; }
+  #stage.f-9x16 { width: 1080px; height: 1920px; --big: 260px; --bottle: 420px; }
+  #stage.f-1x1  { width: 1080px; height: 1080px; --big: 230px; --bottle: 300px; }
+
+  .scene {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity .35s;
+  }
+  .scene.on { opacity: 1; }
+  .scene.on .in { animation: in .7s cubic-bezier(.2, .8, .2, 1) both; }
+  @keyframes in { from { transform: translateY(60px); opacity: 0; } }
+
+  /* 1 — accroche */
+  .s1 { flex-direction: column; text-align: center; }
+  .s1 h2 { font: var(--big)/.85 var(--display); letter-spacing: .02em; }
+  .s1 p { font: italic calc(var(--big) * .38)/1 var(--serif); color: var(--ember); animation-delay: .5s !important; }
+
+  /* 2 — révélation produit */
+  .s2 { background: radial-gradient(circle at 50% 50%, rgba(255, 90, 31, .6), var(--ink) 60%); }
+  .s2 .bottle { width: var(--bottle); filter: drop-shadow(0 40px 60px rgba(0, 0, 0, .6)); }
+  .s2.on .bottle { animation: zoom 4s ease-out both; }
+  @keyframes zoom { from { transform: scale(1.35) translateY(60px); } to { transform: scale(1); } }
+
+  /* 3 — notes */
+  .s3 { background: var(--ember); color: var(--ink); }
+  .s3 span {
+    position: absolute; font: var(--big)/1 var(--display); opacity: 0;
+  }
+  .s3.on span { animation: flash 1.33s both; }
+  .s3.on span:nth-child(2) { animation-delay: 1.33s; }
+  .s3.on span:nth-child(3) { animation-delay: 2.66s; }
+  @keyframes flash { 0% { opacity: 0; transform: scale(1.2); } 15%, 85% { opacity: 1; transform: scale(1); } 100% { opacity: 0; } }
+
+  /* 4 — packshot final */
+  .s4 { gap: 80px; padding: 80px; }
+  .f-9x16 .s4, .f-1x1 .s4 { flex-direction: column; gap: 48px; }
+  .s4 .bottle { width: var(--bottle); }
+  .f-1x1 .s4 .bottle { width: 220px; }
+  .s4 .end { text-align: left; }
+  .f-9x16 .s4 .end, .f-1x1 .s4 .end { text-align: center; }
+  .s4 h1 { font: calc(var(--big) * .6)/.9 var(--display); letter-spacing: .05em; }
+  .s4 h1 em { display: block; font: italic calc(var(--big) * .24)/1.1 var(--serif); letter-spacing: 0; color: var(--ember); }
+  .s4 .cta {
+    display: inline-block; margin-top: 32px; padding: 18px 32px; border: 3px solid var(--cream);
+    font: 600 30px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase;
+  }
+  .s4 .end > * { animation-delay: .2s !important; }
+
+  .progress { position: absolute; left: 0; bottom: 0; height: 8px; background: var(--ember); z-index: 40; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <section class="scene s1" data-from="0" data-to="3">
+    <h2 class="in">LA NUIT</h2>
+    <p class="in">a une odeur.</p>
+  </section>
+  <section class="scene s2" data-from="3" data-to="7">
+    <div class="bottle"></div>
+  </section>
+  <section class="scene s3" data-from="7" data-to="11">
+    <span>AMBRE.</span><span>FIGUE NOIRE.</span><span>CUIR.</span>
+  </section>
+  <section class="scene s4" data-from="11" data-to="15">
+    <div class="bottle in"></div>
+    <div class="end">
+      <h1 class="in">NOCTA<em>Eau de Nuit</em></h1>
+      <div class="cta in">Disponible le 01.12</div>
+    </div>
+  </section>
+  <div class="progress"></div>
+</div>
+<script>
+  // Format : ?format=16x9 | 9x16 | 1x1 (par défaut 16x9). Doit précéder shared.js (mise à l'échelle).
+  const format = new URLSearchParams(location.search).get("format");
+  document.getElementById("stage").className = "f-" + (["9x16", "1x1"].includes(format) ? format : "16x9");
+</script>
+<script src="shared.js"></script>
+<script>
+  // Timeline de 15 s en boucle.
+  const DURATION = 15;
+  const scenes = [...document.querySelectorAll(".scene")];
+  const bar = document.querySelector(".progress");
+  const start = performance.now();
+  const tick = (now) => {
+    const t = ((now - start) / 1000) % DURATION;
+    scenes.forEach((s) => s.classList.toggle("on", t >= +s.dataset.from && t < +s.dataset.to));
+    bar.style.width = (t / DURATION) * 100 + "%";
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+</script>
+</body>
+</html>
